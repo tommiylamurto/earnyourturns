@@ -1,13 +1,12 @@
-"""Everything you need to edit lives in this file."""
 
 # The hashtag to collect, without the leading '#'. Case-insensitive on Bluesky.
 HASHTAGS = ["earnyourturnsday", "nolifts", "splitboarding","backcountryskiing", "skitouring","mtb", "mountainbiking"]
 
-# The subdomain that will serve the feed (points at Cloudflare Pages).
+# The subdomain that will serve the feed.
 SERVICE_HOSTNAME = "feed.evo-review.com"
 
 # Short id for the feed: lowercase letters, digits and dashes, max 15 characters.
-FEED_RKEY = "yourtag"
+FEED_RKEY = "earnyourturnsday"
 
 # What people see in the Bluesky app.
 FEED_DISPLAY_NAME = "#earnyourTurnsday"
