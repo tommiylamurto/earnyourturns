@@ -44,9 +44,10 @@ def main() -> None:
     ]
     write_json(SITE / "posts.json", served)
 
+    tag_list = " ".join("#" + t for t in config.HASHTAGS)
     (SITE / "index.html").write_text(
         f"<!doctype html><title>{config.FEED_DISPLAY_NAME}</title>"
-        f"<p>Bluesky feed generator for #{config.HASHTAG}. {len(served)} posts indexed.</p>"
+        f"<p>Bluesky feed generator for {tag_list}. {len(served)} posts indexed.</p>"
     )
     print(f"site built: {len(served)} posts")
 

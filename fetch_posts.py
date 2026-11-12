@@ -33,15 +33,12 @@ def save_posts(posts: list[dict]) -> None:
     DATA_FILE.write_text(json.dumps(posts, indent=0) + "\n")
 
 
-def search_new_posts(client: Client, known: set[str]) -> list[dict]:
+def search_tag(client: Client, tag: str, known: set[str]) -> list[dict]:
+    """Newest-first search for one tag; stops at the first post already
+    collected under this same tag."""
     found, cursor = [], None
     for _ in range(config.MAX_PAGES_PER_RUN):
-        params = {
-            "q": f"#{config.HASHTAG}",
-            "tag": [config.HASHTAG],
-            "sort": "latest",
-            "limit": 100,
-        }
+        params = {"q": f"#{tag}", "tag": [tag], "sort": "latest", "limit": 100}
         if cursor:
             params["cursor"] = cursor
         resp = client.app.bsky.feed.search_posts(params=params)
@@ -55,6 +52,7 @@ def search_new_posts(client: Client, known: set[str]) -> list[dict]:
                 "t": normalize_time(p.indexed_at),
                 "author": p.author.did,
                 "handle": p.author.handle,
+                "tags": [tag],
             })
         cursor = resp.cursor
         if hit_known or not cursor or not resp.posts:
@@ -62,21 +60,38 @@ def search_new_posts(client: Client, known: set[str]) -> list[dict]:
     return found
 
 
+def merge(posts: list[dict], new: list[dict]) -> dict[str, dict]:
+    """Combine by post URI, unioning the tags each post was found under."""
+    merged: dict[str, dict] = {}
+    for p in posts + new:
+        if p["uri"] in merged:
+            tags = merged[p["uri"]].setdefault("tags", [])
+            tags.extend(t for t in p.get("tags", []) if t not in tags)
+        else:
+            merged[p["uri"]] = {**p, "tags": list(p.get("tags", []))}
+    return merged
+
+
 def main() -> None:
     client = Client()
     client.login(os.environ["BSKY_HANDLE"], os.environ["BSKY_APP_PASSWORD"])
 
     posts = load_posts()
-    new = search_new_posts(client, {p["uri"] for p in posts})
+    new: list[dict] = []
+    for tag in dict.fromkeys(t.lower().lstrip("#") for t in config.HASHTAGS):
+        known = {p["uri"] for p in posts if tag in p.get("tags", [])}
+        hits = search_tag(client, tag, known)
+        print(f"#{tag}: {len(hits)} new")
+        new.extend(hits)
 
-    merged = {p["uri"]: p for p in posts + new}
+    merged = merge(posts, new)
     ordered = sorted(merged.values(), key=lambda p: (p["t"], p["uri"]), reverse=True)
     ordered = ordered[: config.MAX_STORED_POSTS]
 
     changed = bool(new)
     if changed:
         save_posts(ordered)
-    print(f"{len(new)} new posts, {len(ordered)} stored")
+    print(f"{len(merged) - len(posts)} new posts, {len(ordered)} stored")
 
     # Tell the GitHub workflow whether anything changed.
     if out := os.environ.get("GITHUB_OUTPUT"):

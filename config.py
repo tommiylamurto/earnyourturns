@@ -1,7 +1,7 @@
 """Everything you need to edit lives in this file."""
 
 # The hashtag to collect, without the leading '#'. Case-insensitive on Bluesky.
-HASHTAG = "EarnYourTurnsday"
+HASHTAGS = ["earnyourturnsday", "nolifts", "splitboarding","backcountryskiing", "skitouring","mtb", "mountainbiking"]
 
 # The subdomain that will serve the feed (points at Cloudflare Pages).
 SERVICE_HOSTNAME = "feed.evo-review.com"
@@ -10,8 +10,8 @@ SERVICE_HOSTNAME = "feed.evo-review.com"
 FEED_RKEY = "yourtag"
 
 # What people see in the Bluesky app.
-FEED_DISPLAY_NAME = "#yourtag"
-FEED_DESCRIPTION = "All posts tagged #yourtag."
+FEED_DISPLAY_NAME = "#earnyourTurnsday"
+FEED_DESCRIPTION = "Post your backcountry skiing and enduro biking adventures every Thursday. You earned it! No lifts, shuttles or ebikes."
 
 # Your Bluesky account's DID (starts with did:plc:). publish_feed.py prints it.
 PUBLISHER_DID = "did:plc:REPLACE_ME"
