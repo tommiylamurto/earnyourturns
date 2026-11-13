@@ -78,7 +78,7 @@ def main() -> None:
 
     posts = load_posts()
     new: list[dict] = []
-    for tag in dict.fromkeys(t.lower().lstrip("#") for t in config.HASHTAGS):
+    for tag in config.all_hashtags():
         known = {p["uri"] for p in posts if tag in p.get("tags", [])}
         hits = search_tag(client, tag, known)
         print(f"#{tag}: {len(hits)} new")

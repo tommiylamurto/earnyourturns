@@ -32,24 +32,29 @@ def main() -> None:
 
     write_json(SITE / "describe.json", {
         "did": config.SERVICE_DID,
-        "feeds": [{"uri": config.FEED_URI}],
+        "feeds": [{"uri": config.feed_uri(f["rkey"])} for f in config.FEEDS],
     })
 
     posts = json.loads(DATA_FILE.read_text()) if DATA_FILE.exists() else []
     blocked = {b.lower() for b in config.BLOCKED_AUTHORS}
-    served = [
-        {"uri": p["uri"], "t": p["t"]}
-        for p in posts
+    allowed = [
+        p for p in posts
         if p["author"].lower() not in blocked and p.get("handle", "").lower() not in blocked
     ]
-    write_json(SITE / "posts.json", served)
 
-    tag_list = " ".join("#" + t for t in config.HASHTAGS)
+    # One newest-first post list per feed: site/feeds/<rkey>.json
+    lines = []
+    for feed in config.FEEDS:
+        tags = {config.clean_tag(t) for t in feed["hashtags"]}
+        served = [{"uri": p["uri"], "t": p["t"]} for p in allowed if tags & set(p.get("tags", []))]
+        write_json(SITE / "feeds" / f"{feed['rkey']}.json", served)
+        lines.append(f"<li>{feed['name']}: {len(served)} posts</li>")
+        print(f"{feed['rkey']}: {len(served)} posts")
+
     (SITE / "index.html").write_text(
-        f"<!doctype html><title>{config.FEED_DISPLAY_NAME}</title>"
-        f"<p>Bluesky feed generator for {tag_list}. {len(served)} posts indexed.</p>"
+        "<!doctype html><title>Bluesky feeds</title>"
+        f"<p>Bluesky feed generator.</p><ul>{''.join(lines)}</ul>"
     )
-    print(f"site built: {len(served)} posts")
 
 
 if __name__ == "__main__":

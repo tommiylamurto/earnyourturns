@@ -1,6 +1,6 @@
 // Cloudflare Pages Function: answers Bluesky's requests at /xrpc/<method>.
 // Static files can't read ?limit=&cursor=, so this tiny function pages
-// through the prebuilt posts.json. Free tier: 100k requests/day.
+// through the prebuilt feeds/<rkey>.json. Free tier: 100k requests/day.
 
 const json = (body, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -14,7 +14,14 @@ const json = (body, status = 200) =>
 
 async function loadAsset(env, request, path) {
   const res = await env.ASSETS.fetch(new URL(path, request.url));
+  if (!res.ok) return null;
   return res.json();
+}
+
+// ?feed=at://did:plc:.../app.bsky.feed.generator/<rkey>  ->  "<rkey>"
+function feedRkey(feedParam) {
+  const m = /\/app\.bsky\.feed\.generator\/([a-zA-Z0-9-]{1,64})$/.exec(feedParam || "");
+  return m ? m[1] : null;
 }
 
 export async function onRequest({ request, env, params }) {
@@ -25,7 +32,9 @@ export async function onRequest({ request, env, params }) {
   }
 
   if (params.method === "app.bsky.feed.getFeedSkeleton") {
-    const posts = await loadAsset(env, request, "/posts.json"); // newest first
+    const rkey = feedRkey(url.searchParams.get("feed"));
+    const posts = rkey && (await loadAsset(env, request, `/feeds/${rkey}.json`)); // newest first
+    if (!posts) return json({ error: "UnknownFeed", message: "No such feed here" }, 400);
     let limit = parseInt(url.searchParams.get("limit") || "50", 10);
     if (!Number.isFinite(limit)) limit = 50;
     limit = Math.min(Math.max(limit, 1), 100);

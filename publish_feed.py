@@ -1,6 +1,9 @@
-"""Run once on your own computer to register the feed on your Bluesky account.
+"""Run on your own computer to register the feeds in config.FEEDS on your
+Bluesky account.
 
-Safe to re-run: it overwrites the same record (e.g. after changing the name).
+Safe to re-run: each feed's record is overwritten in place (e.g. after changing
+a name or description), so subscribers and likes are kept. Run it again after
+adding a new feed to the list.
 """
 import getpass
 import os
@@ -18,24 +21,24 @@ def main() -> None:
     client = Client()
     client.login(handle, password)
     did = client.me.did
+    now = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
-    client.com.atproto.repo.put_record({
-        "repo": did,
-        "collection": "app.bsky.feed.generator",
-        "rkey": config.FEED_RKEY,
-        "record": {
-            "$type": "app.bsky.feed.generator",
-            "did": config.SERVICE_DID,
-            "displayName": config.FEED_DISPLAY_NAME,
-            "description": config.FEED_DESCRIPTION,
-            "createdAt": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
-        },
-    })
+    for feed in config.FEEDS:
+        client.com.atproto.repo.put_record({
+            "repo": did,
+            "collection": "app.bsky.feed.generator",
+            "rkey": feed["rkey"],
+            "record": {
+                "$type": "app.bsky.feed.generator",
+                "did": config.SERVICE_DID,
+                "displayName": feed["name"],
+                "description": feed["description"],
+                "createdAt": now,
+            },
+        })
+        print(f"Published {feed['name']}: https://bsky.app/profile/{did}/feed/{feed['rkey']}")
 
-    print("Feed published.")
-    print(f"  Your DID (put in config.PUBLISHER_DID): {did}")
-    print(f"  Feed URI: at://{did}/app.bsky.feed.generator/{config.FEED_RKEY}")
-    print(f"  Open it: https://bsky.app/profile/{did}/feed/{config.FEED_RKEY}")
+    print(f"\nYour DID (put in config.PUBLISHER_DID): {did}")
 
 
 if __name__ == "__main__":
