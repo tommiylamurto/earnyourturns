@@ -17,9 +17,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
           cache: pip
@@ -40,7 +40,13 @@ jobs:
           git config user.email "feed-bot@users.noreply.github.com"
           git add data/posts.json
           git commit -m "Update posts"
-          git push
+          # If you edited the repo while this run was going, merge that in and retry.
+          for attempt in 1 2 3; do
+            git pull --rebase --quiet origin main && git push && exit 0
+            echo "Push failed (attempt $attempt), retrying..."
+            sleep 5
+          done
+          exit 1
 
       - name: Build site
         if: steps.fetch.outputs.changed == 'true' || github.event_name == 'workflow_dispatch'
@@ -53,5 +59,12 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           PROJECT: ${{ vars.CF_PAGES_PROJECT }}
         run: |
-          npx --yes wrangler@4 pages project create "$PROJECT" --production-branch=main || true
+          if [ -z "$PROJECT" ]; then
+            echo "::error::Variable CF_PAGES_PROJECT is not set (Settings > Secrets and variables > Actions > Variables)"
+            exit 1
+          fi
+          # Create the Pages project on the first run only; show real errors.
+          if ! npx --yes wrangler@4 pages project list 2>&1 | grep -qw "$PROJECT"; then
+            npx --yes wrangler@4 pages project create "$PROJECT" --production-branch=main
+          fi
           npx --yes wrangler@4 pages deploy site --project-name="$PROJECT" --branch=main --commit-dirty=true
