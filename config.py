@@ -21,7 +21,7 @@ FEEDS = [
         "exclude_hashtags": ['emtb','ebike'],
         "name": "#EarnYourTurnsDay",
         "description": "Post your backcountry skiing and enduro biking adventures every Thursday. You earned it! No lifts, shuttles or ebikes.",
-        "avatar": "avatars/earn.png",
+        "avatar": "avatars/earnlarge.jpg",
     },
     {
         "rkey": "senditsun",
