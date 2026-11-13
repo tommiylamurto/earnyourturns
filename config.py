@@ -34,7 +34,7 @@ FEEDS = [
 ]
 
 # Your Bluesky account's DID (starts with did:plc:). publish_feed.py prints it.
-PUBLISHER_DID = "did:plc:REPLACE_ME"
+PUBLISHER_DID = "did:plc:ksafu7lynpsxwowddviowyur"
 
 # Accounts whose posts should never appear in any feed (DIDs or handles).
 # These are mostly ads or non-original content or flooding the channel.
