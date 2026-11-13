@@ -33,6 +33,24 @@ def save_posts(posts: list[dict]) -> None:
     DATA_FILE.write_text(json.dumps(posts, indent=0) + "\n")
 
 
+def _get(obj, name):
+    """Read a field from either an SDK model or a plain dict."""
+    if isinstance(obj, dict):
+        return obj.get(name)
+    return getattr(obj, name, None)
+
+
+def post_hashtags(record) -> list[str]:
+    """Every hashtag on a post: #tags in the text plus any hidden extra tags."""
+    tags = [config.clean_tag(t) for t in (_get(record, "tags") or [])]
+    for facet in _get(record, "facets") or []:
+        for feature in _get(facet, "features") or []:
+            tag = _get(feature, "tag")
+            if tag:
+                tags.append(config.clean_tag(tag))
+    return list(dict.fromkeys(tags))
+
+
 def search_tag(client: Client, tag: str, known: set[str]) -> list[dict]:
     """Newest-first search for one tag; stops at the first post already
     collected under this same tag."""
@@ -53,6 +71,7 @@ def search_tag(client: Client, tag: str, known: set[str]) -> list[dict]:
                 "author": p.author.did,
                 "handle": p.author.handle,
                 "tags": [tag],
+                "all_tags": post_hashtags(p.record),
             })
         cursor = resp.cursor
         if hit_known or not cursor or not resp.posts:

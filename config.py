@@ -9,19 +9,27 @@ SERVICE_HOSTNAME = "feed.evo-review.com"
 #                have (e.g. your BlueskyFeedCreator one) unless you mean to take it over.
 #   hashtags:    without '#'. Case doesn't matter (#SendItSunday = #senditsunday),
 #                but different spellings (#sendit_sunday) are different tags.
-#   name / description: what people see in the Bluesky app.
+#   exclude_hashtags: (optional) drop any post that also has one of these tags.
+#                Applies to old posts too, from the next deploy.
+#   name / description: what people see in the Bluesky app (description max 300 characters).
+#   avatar:      (optional) path to a square PNG or JPEG under 1 MB, e.g. "avatars/earnyourturns.png".
+#                Uploaded when you run publish_feed.py.
 FEEDS = [
     {
         "rkey": "earnyourturns",
         "hashtags": ["earnyourturnsday","nolifts", "splitboarding","backcountryskiing", "skitouring","mtb", "mountainbiking"],
+        "exclude_hashtags": ['emtb','ebike'],
         "name": "#EarnYourTurnsDay",
         "description": "Post your backcountry skiing and enduro biking adventures every Thursday. You earned it! No lifts, shuttles or ebikes.",
+        "avatar": None,
     },
     {
         "rkey": "senditsun",
-        "hashtags": ["senditsunday"],
+        "hashtags": ["senditsunday","ski"],
+        "exclude_hashtags": [],
         "name": "#SendItSunday",
         "description": "Post your skiing and mountain biking photos and videos every Sunday. Doesn't really have to be sendy at all. We are not sponsored by Redbull. If it was sendy to you, then it's good enough for this feed.",
+        "avatar": None,
     },
 ]
 
@@ -30,8 +38,14 @@ PUBLISHER_DID = "did:plc:REPLACE_ME"
 
 # Accounts whose posts should never appear in any feed (DIDs or handles).
 # These are mostly ads or non-original content or flooding the channel.
-BLOCKED_AUTHORS: set[str] = set('kagank.bsky.social','mathieuvanderpoel.bsky.social','indeleiderstrui.bsky.social','pink-wire.bsky.social',
-                                'coloradotrail.pages.dev','acht.eurosky.social')
+BLOCKED_AUTHORS: set[str] = {
+    "kagank.bsky.social",
+    "mathieuvanderpoel.bsky.social",
+    "indeleiderstrui.bsky.social",
+    "pink-wire.bsky.social",
+    "coloradotrail.pages.dev",
+    "acht.eurosky.social",
+}
 
 # How many posts to keep in history, and how many search pages to read per tag per run.
 MAX_STORED_POSTS = 50000
@@ -59,5 +73,7 @@ import re as _re
 for _f in FEEDS:
     if not _re.fullmatch(r"[a-z0-9-]{1,15}", _f["rkey"]):
         raise ValueError(f"rkey {_f['rkey']!r}: use lowercase letters, digits, dashes; max 15 chars")
+    if len(_f["description"]) > 300:
+        raise ValueError(f"{_f['rkey']}: description is {len(_f['description'])} characters, max 300")
 if len({_f["rkey"] for _f in FEEDS}) != len(FEEDS):
     raise ValueError("Two feeds in FEEDS share the same rkey")

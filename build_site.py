@@ -46,7 +46,12 @@ def main() -> None:
     lines = []
     for feed in config.FEEDS:
         tags = {config.clean_tag(t) for t in feed["hashtags"]}
-        served = [{"uri": p["uri"], "t": p["t"]} for p in allowed if tags & set(p.get("tags", []))]
+        excluded = {config.clean_tag(t) for t in feed.get("exclude_hashtags", [])}
+        served = [
+            {"uri": p["uri"], "t": p["t"]}
+            for p in allowed
+            if tags & set(p.get("tags", [])) and not excluded & set(p.get("all_tags", []))
+        ]
         write_json(SITE / "feeds" / f"{feed['rkey']}.json", served)
         lines.append(f"<li>{feed['name']}: {len(served)} posts</li>")
         print(f"{feed['rkey']}: {len(served)} posts")
