@@ -6,7 +6,7 @@ HASHTAGS = ["earnyourturnsday", "nolifts", "splitboarding","backcountryskiing", 
 SERVICE_HOSTNAME = "feed.evo-review.com"
 
 # Short id for the feed: lowercase letters, digits and dashes, max 15 characters.
-FEED_RKEY = "earnyourturnsday"
+FEED_RKEY = "earnyourturns"
 
 # What people see in the Bluesky app.
 FEED_DISPLAY_NAME = "#earnyourTurnsday"
@@ -16,7 +16,9 @@ FEED_DESCRIPTION = "Post your backcountry skiing and enduro biking adventures ev
 PUBLISHER_DID = "did:plc:REPLACE_ME"
 
 # Accounts whose posts should never appear (DIDs or handles).
-BLOCKED_AUTHORS: set[str] = set()
+# These are mostly adds or non-original content or flooding the channel.
+BLOCKED_AUTHORS: set[str] = set('kagank.bsky.social','mathieuvanderpoel.bsky.social','indeleiderstrui.bsky.social','pink-wire.bsky.social',
+                                'coloradotrail.pages.dev','acht.eurosky.social')
 
 # How many posts to keep in history, and how many search pages to read per run.
 MAX_STORED_POSTS = 20000
