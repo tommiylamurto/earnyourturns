@@ -29,7 +29,7 @@ FEEDS = [
         "exclude_links": True,
         "visible_tags_only": True,
         "rkey": "senditsun",
-        "hashtags": ["senditsunday","ski"],
+        "hashtags": ["senditsunday"],
         "exclude_hashtags": [],
         "name": "#SendItSunday",
         "description": "Post your skiing and mountain biking photos and videos every Sunday. Doesn't really have to be sendy at all. We are not sponsored by Redbull. If it was sendy to you, then it's good enough for this feed.",
@@ -49,6 +49,8 @@ BLOCKED_AUTHORS: set[str] = {
     "pink-wire.bsky.social",
     "coloradotrail.pages.dev",
     "acht.eurosky.social",
+    "skiutah-cambot.social",
+    "skimagazine.bsky.social"
 }
 
 # How many posts to keep in history, and how many search pages to read per tag per run.
