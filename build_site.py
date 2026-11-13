@@ -50,7 +50,10 @@ def main() -> None:
         served = [
             {"uri": p["uri"], "t": p["t"]}
             for p in allowed
-            if tags & set(p.get("tags", [])) and not excluded & set(p.get("all_tags", []))
+            if tags & set(p.get("tags", []))
+            and not excluded & set(p.get("all_tags", []))
+            and not (feed.get("exclude_links") and p.get("has_link"))
+            and not (feed.get("visible_tags_only") and not tags & set(p.get("visible_tags", [])))
         ]
         write_json(SITE / "feeds" / f"{feed['rkey']}.json", served)
         lines.append(f"<li>{feed['name']}: {len(served)} posts</li>")

@@ -5,6 +5,7 @@ main password: Settings > Privacy and security > App passwords).
 """
 import json
 import os
+import re
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -51,6 +52,66 @@ def post_hashtags(record) -> list[str]:
     return list(dict.fromkeys(tags))
 
 
+LINK_IN_TEXT = re.compile(r"https?://|www\.\S+\.\w", re.IGNORECASE)
+
+
+def _type(obj) -> str:
+    return _get(obj, "py_type") or _get(obj, "$type") or ""
+
+
+def post_has_link(record) -> bool:
+    """True if the post has a link preview card or a web link in its text.
+    Images, videos and quote posts don't count as links."""
+    embed = _get(record, "embed")
+    if embed is not None:
+        if _type(embed).startswith("app.bsky.embed.external"):
+            return True
+        media = _get(embed, "media")  # quote post + attached media
+        if media is not None and _type(media).startswith("app.bsky.embed.external"):
+            return True
+    for facet in _get(record, "facets") or []:
+        for feature in _get(facet, "features") or []:
+            if _get(feature, "uri"):
+                return True
+    return bool(LINK_IN_TEXT.search(_get(record, "text") or ""))
+
+
+def visible_hashtags(record) -> list[str]:
+    """Only the #tags written in the post text (not hidden extra tags)."""
+    tags = []
+    for facet in _get(record, "facets") or []:
+        for feature in _get(facet, "features") or []:
+            tag = _get(feature, "tag")
+            if tag:
+                tags.append(config.clean_tag(tag))
+    return list(dict.fromkeys(tags))
+
+
+def describe(record) -> dict:
+    return {
+        "all_tags": post_hashtags(record),
+        "visible_tags": visible_hashtags(record),
+        "has_link": post_has_link(record),
+    }
+
+
+def fill_missing_details(client: Client, posts: list[dict]) -> int:
+    """Look up tags/link info for posts collected before these were recorded."""
+    missing = [p for p in posts if "has_link" not in p or "visible_tags" not in p]
+    for i in range(0, len(missing), 25):
+        batch = missing[i:i + 25]
+        resp = client.app.bsky.feed.get_posts(params={"uris": [p["uri"] for p in batch]})
+        found = {pv.uri: pv for pv in resp.posts}
+        for p in batch:
+            if p["uri"] in found:
+                p.update(describe(found[p["uri"]].record))
+            else:
+                # deleted post; Bluesky stops showing it anyway
+                p.setdefault("has_link", False)
+                p.setdefault("visible_tags", [])
+    return len(missing)
+
+
 def search_tag(client: Client, tag: str, known: set[str]) -> list[dict]:
     """Newest-first search for one tag; stops at the first post already
     collected under this same tag."""
@@ -71,7 +132,7 @@ def search_tag(client: Client, tag: str, known: set[str]) -> list[dict]:
                 "author": p.author.did,
                 "handle": p.author.handle,
                 "tags": [tag],
-                "all_tags": post_hashtags(p.record),
+                **describe(p.record),
             })
         cursor = resp.cursor
         if hit_known or not cursor or not resp.posts:
@@ -107,7 +168,11 @@ def main() -> None:
     ordered = sorted(merged.values(), key=lambda p: (p["t"], p["uri"]), reverse=True)
     ordered = ordered[: config.MAX_STORED_POSTS]
 
-    changed = bool(new)
+    filled = fill_missing_details(client, ordered)
+    if filled:
+        print(f"looked up link/tag details for {filled} older posts")
+
+    changed = bool(new) or filled > 0
     if changed:
         save_posts(ordered)
     print(f"{len(merged) - len(posts)} new posts, {len(ordered)} stored")
