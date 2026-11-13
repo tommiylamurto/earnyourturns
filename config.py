@@ -17,7 +17,7 @@ SERVICE_HOSTNAME = "feed.evo-review.com"
 FEEDS = [
     {
         "rkey": "earnyourturns",
-        "hashtags": ["earnyourturnsday","nolifts", "splitboarding","backcountryskiing", "skitouring","mtb", "mountainbiking"],
+        "hashtags": ["earnyourturnsday","nolifts", "splitboarding","backcountryskiing", "skitouring","mtb", "mountainbiking","mountainbike","mtbsky"],
         "exclude_hashtags": ['emtb','ebike'],
         "name": "#EarnYourTurnsDay",
         "description": "Post your backcountry skiing and enduro biking adventures every Thursday. You earned it! No lifts, shuttles or ebikes.",
@@ -29,7 +29,7 @@ FEEDS = [
         "exclude_hashtags": [],
         "name": "#SendItSunday",
         "description": "Post your skiing and mountain biking photos and videos every Sunday. Doesn't really have to be sendy at all. We are not sponsored by Redbull. If it was sendy to you, then it's good enough for this feed.",
-        "avatar": None,
+        "avatar": "avatars/send.jpg",
     },
 ]
 

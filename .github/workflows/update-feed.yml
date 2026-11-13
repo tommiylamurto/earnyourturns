@@ -1,0 +1,57 @@
+name: Update feed
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"   # every 15 min (GitHub may run it a few minutes late)
+  workflow_dispatch:          # "Run workflow" button for manual runs
+
+permissions:
+  contents: write
+
+concurrency:
+  group: update-feed
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - run: pip install -r requirements.txt
+
+      - name: Fetch new posts
+        id: fetch
+        env:
+          BSKY_HANDLE: ${{ secrets.BSKY_HANDLE }}
+          BSKY_APP_PASSWORD: ${{ secrets.BSKY_APP_PASSWORD }}
+        run: python fetch_posts.py
+
+      - name: Save post history
+        if: steps.fetch.outputs.changed == 'true'
+        run: |
+          git config user.name "feed-bot"
+          git config user.email "feed-bot@users.noreply.github.com"
+          git add data/posts.json
+          git commit -m "Update posts"
+          git push
+
+      - name: Build site
+        if: steps.fetch.outputs.changed == 'true' || github.event_name == 'workflow_dispatch'
+        run: python build_site.py
+
+      - name: Deploy to Cloudflare Pages
+        if: steps.fetch.outputs.changed == 'true' || github.event_name == 'workflow_dispatch'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          PROJECT: ${{ vars.CF_PAGES_PROJECT }}
+        run: |
+          npx --yes wrangler@4 pages project create "$PROJECT" --production-branch=main || true
+          npx --yes wrangler@4 pages deploy site --project-name="$PROJECT" --branch=main --commit-dirty=true
