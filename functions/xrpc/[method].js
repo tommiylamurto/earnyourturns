@@ -20,8 +20,8 @@ async function loadAsset(env, request, path) {
 
 // ?feed=at://did:plc:.../app.bsky.feed.generator/<rkey>  ->  "<rkey>"
 function feedRkey(feedParam) {
-  const m = /\/app\.bsky\.feed\.generator\/([a-zA-Z0-9-]{1,64})$/.exec(feedParam || "");
-  return m ? m[1] : null;
+  const m = /\/app\.bsky\.feed\.generator\/([A-Za-z0-9._~-]{1,512})$/.exec(feedParam || "");
+  return m && m[1] !== "." && m[1] !== ".." ? m[1] : null;
 }
 
 export async function onRequest({ request, env, params }) {

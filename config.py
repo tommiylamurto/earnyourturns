@@ -16,7 +16,7 @@ SERVICE_HOSTNAME = "feed.evo-review.com"
 #                Uploaded when you run publish_feed.py.
 FEEDS = [
     {
-        "rkey": "earnyourturns",
+        "rkey": "earnurturnsday",
         "hashtags": ["earnyourturnsday","nolifts", "splitboarding","backcountryskiing", "skitouring","mtb", "mountainbiking","mountainbike","mtbsky"],
         "exclude_hashtags": ['emtb','ebike'],
         "name": "#EarnYourTurnsDay",
@@ -28,7 +28,7 @@ FEEDS = [
     {
         "exclude_links": True,
         "visible_tags_only": True,
-        "rkey": "senditsun",
+        "rkey": "senditsunday",
         "hashtags": ["senditsunday"],
         "exclude_hashtags": [],
         "name": "#SendItSunday",
